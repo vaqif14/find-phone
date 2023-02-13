@@ -4,7 +4,6 @@
   "license": "LGPL-3.0-or-later",
   "private": true,
   "scripts": {
-    "prepare": "husky install && husky add .husky/pre-commit 'yarn lint-staged'",
     "start": "lingui extract && lingui compile && react-scripts start",
     "build": "lingui compile && react-scripts build",
     "deploy": "yarn build && serverless deploy"
