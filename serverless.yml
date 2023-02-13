@@ -1,0 +1,53 @@
+service: mapitout-proxy
+
+plugins:
+  - serverless-offline
+  - serverless-prune-plugin
+  - serverless-s3-sync
+  - serverless-cloudfront-invalidate
+
+custom:
+  prune:
+    automatic: true
+    number: 20
+  s3Sync:
+    - bucketName: mapitout.iamsterdam.com
+      localDir: build/
+      acl: public-read
+  cloudfrontInvalidate:
+    - distributionId: E5M144WQ6D3CE
+      items:
+        - /index.html
+        - "/*"
+
+package:
+  patterns:
+    - "!src/**"
+    - "!public/**"
+    - "!build/**"
+    - "!docs/**"
+    - "!importer/**"
+    - "!.circleci/**"
+    - "!node_modules/**"
+    - "functions/**"
+    - "node_modules/axios/**"
+    - "node_modules/follow-redirects/**"
+    - "package.json"
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: production
+  region: eu-west-1
+  environment:
+    TRAVELTIME_APP_ID: ${env:TRAVELTIME_APP_ID}
+    TRAVELTIME_APP_KEY: ${env:TRAVELTIME_APP_KEY}
+
+functions:
+  time-map:
+    handler: functions/time-map.handler
+    events:
+      - http:
+          path: time-map
+          method: post
+          cors: true
