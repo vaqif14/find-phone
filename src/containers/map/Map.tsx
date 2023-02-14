@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { connect } from "react-redux";
 import { bindActionCreators, Dispatch } from "redux";
 import {
@@ -10,6 +10,7 @@ import {
 } from "react-google-maps";
 import styled, { createGlobalStyle } from "styled-components";
 import Pointer from "../../assets/pointer.png";
+import PointerRed from "../../assets/pointer-red.png";
 
 import {
   ZoomInIcon,
@@ -31,6 +32,7 @@ import { googleMapsStyles } from "../../constants";
 import { Markers, Pois, Polygons, SchoolDetailPin, Tooltip } from "./lib";
 import { i18n } from "../../index";
 import { determineLanguage, setLanguage } from "../../locales/utils";
+import useWebSocket from "../useWesbocket";
 
 const GlobalGoogleMapsAttributionOffset = createGlobalStyle`
 	@media (max-width: 900px) {
@@ -116,6 +118,8 @@ interface State {
 export function Component() {
   const mapRef = React.useRef<GoogleMap>(null);
   const [showTooltip, setShowTooltip] = React.useState(false);
+  const [showAlert, setShowAlert] = React.useState(false);
+  const [socket, message] = useWebSocket();
   const animateFitToBounds = (
     travelTimes: NonNullable<ReduxState["travelTime"]["travelTimes"]>
   ) => {
@@ -164,6 +168,15 @@ export function Component() {
       lng: (east + west) / 2,
     });
   };
+  const data = message;
+
+  console.log(message);
+
+  useEffect(() => {
+    if (data) {
+      setShowAlert(true);
+    }
+  }, [data]);
 
   const zoom = (zoomDirection: "in" | "out") => {
     if (!mapRef.current) {
@@ -282,10 +295,10 @@ export function Component() {
         center={{ lat: 40.378395, lng: 49.840288 }}
         radius={300}
         options={{
-          strokeColor: "#0000FF",
+          strokeColor: showAlert ? "red" : "#0000FF",
           strokeOpacity: 0.8,
           strokeWeight: 2,
-          fillColor: "#0000FF",
+          fillColor: showAlert ? "red" : "#0000FF",
           fillOpacity: 0.35,
         }}
       />
@@ -295,7 +308,7 @@ export function Component() {
           setShowTooltip(true);
         }}
         icon={{
-          url: Pointer,
+          url: showAlert ? PointerRed : Pointer,
           scaledSize: new window.google.maps.Size(50, 50),
           origin: new window.google.maps.Point(0, 0),
           anchor: new window.google.maps.Point(25, 25),
@@ -330,10 +343,29 @@ export function Component() {
                 marginRight: "10px",
                 padding: 10,
               }}
+              onClick={() => {
+                const data = {
+                  type: "sos",
+                  lat: 40.378395,
+                  lng: 49.840288,
+                };
+
+                (socket as any).send(JSON.stringify(data));
+              }}
             >
               SOS
             </button>
           </div>
+        </InfoWindow>
+      )}
+      {showAlert && (
+        <InfoWindow
+          position={{ lat: 40.378395, lng: 49.840288 }}
+          onCloseClick={() => {
+            setShowTooltip(false);
+          }}
+        >
+          <p style={{ color: "red" }}>Istifadəciyə yardım etmək lazımdır.</p>
         </InfoWindow>
       )}
     </GoogleMap>
